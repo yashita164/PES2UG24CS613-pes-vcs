@@ -94,12 +94,21 @@ int object_exists(const ObjectID *id) {
 //
 // Returns 0 on success, -1 on error.
 int object_write(ObjectType type, const void *data, size_t len, ObjectID *out) {
-    // 1. Compute hash
     if (compute_hash(data, len, out) != 0) return -1;
 
-    // 2. Build object path
     char path[256];
     if (object_path(out, path, sizeof(path)) != 0) return -1;
+
+    // 3. Write object to file
+    FILE *f = fopen(path, "wb");
+    if (!f) return -1;
+
+    if (fwrite(data, 1, len, f) != len) {
+        fclose(f);
+        return -1;
+    }
+
+    fclose(f);
 
     return 0;
 }// Read an object from the store.
