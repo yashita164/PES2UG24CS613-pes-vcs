@@ -134,9 +134,41 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *out) {
 // The caller is responsible for calling free(*data_out).
 // Returns 0 on success, -1 on error (file not found, corrupt, etc.).
 int object_read(const ObjectID *id, ObjectType *type, void **data, size_t *len) {
-    (void)id;
-    (void)type;
-    (void)data;
-    (void)len;
-    return -1;
+    // 1. Build object path
+    char path[256];
+    if (object_path(id, path, sizeof(path)) != 0) return -1;
+
+    // 2. Open file
+    FILE *f = fopen(path, "rb");
+    if (!f) return -1;
+
+    // 3. Get file size
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    rewind(f);
+
+    // 4. Allocate buffer
+    void *buf = malloc(size);
+    if (!buf) {
+        fclose(f);
+        return -1;
+    }
+
+    // 5. Read data
+    if (fread(buf, 1, size, f) != size) {
+        free(buf);
+        fclose(f);
+        return -1;
+    }
+
+    fclose(f);
+
+    // 6. Set outputs
+    *data = buf;
+    *len = size;
+
+    // (type handling skipped for now)
+    if (type) *type = OBJ_BLOB;
+
+    return 0;
 }
