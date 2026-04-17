@@ -97,9 +97,12 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *out) {
     // 1. Compute hash
     if (compute_hash(data, len, out) != 0) return -1;
 
+    // 2. Build object path
+    char path[256];
+    if (object_path(out, path, sizeof(path)) != 0) return -1;
+
     return 0;
-}
-// Read an object from the store.
+}// Read an object from the store.
 //
 // Steps:
 //   1. Build the file path from the hash using object_path()
